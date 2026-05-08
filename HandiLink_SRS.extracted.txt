@@ -1,0 +1,589 @@
+HandiLink
+The Trusted Marketplace for On-Demand Home Services
+Software Requirements Specification (SRS)
+Document Version
+1.0
+Status
+Draft
+Date
+May 8, 2026
+Project
+HandiLink Platform
+Prepared By
+Group 3 — Codinera, Dagode, Lopez, Mendoza, Valdez
+Course
+GV101
+Geographic Scope
+Quezon City, Philippines (Beta)
+1. Introduction
+1.1 Purpose
+This Software Requirements Specification (SRS) document defines the complete functional and non-functional requirements for HandiLink — a data-driven, on-demand home services marketplace targeted at residents of Quezon City, Philippines. It serves as the authoritative reference for all stakeholders involved in the design, development, testing, and deployment of the HandiLink platform.
+1.2 Product Overview
+HandiLink addresses a critical trust gap in the local home services market. Homeowners — particularly those new to a neighborhood — currently rely on outdated directories or unverified social media groups when seeking skilled tradespeople. HandiLink resolves this by combining verified worker profiles, a transparent reputation engine, and a streamlined booking flow into a single mobile-first platform.
+1.3 Scope
+The HandiLink platform encompasses:
+A dual-role mobile and web application serving both Customers (homeowners) and Providers (skilled tradespeople)
+A backend platform supporting user authentication, booking management, geolocation, payments, and review processing
+An administrative dashboard for moderation and system monitoring
+Out-of-scope items include major construction services, custom escrow payment systems, and geographic regions beyond Quezon City for the Beta release.
+1.4 Definitions, Acronyms, and Abbreviations
+Term
+Definition
+Customer
+A registered homeowner or renter who books home services through HandiLink.
+Provider
+A verified skilled tradesperson who offers services through HandiLink.
+Booking
+A confirmed service engagement between a Customer and a Provider.
+Reputation Engine
+The algorithmic system that computes Provider trust scores from verified reviews.
+Verified Badge
+A visual indicator automatically awarded to Providers maintaining a rating above 4.7 stars with zero no-show flags.
+No-Show Flag
+A system-generated penalty assigned when a Provider fails to attend a confirmed Booking.
+SRS
+Software Requirements Specification.
+API
+Application Programming Interface.
+OTP
+One-Time Password used for authentication.
+UI
+User Interface.
+MVP
+Minimum Viable Product.
+1.5 References
+HandiLink Group 3 Project Presentation (GV101_GROUP_3.pdf)
+IEEE Std 830-1998 — IEEE Recommended Practice for Software Requirements Specifications
+DICT Philippines Cybersecurity Framework 2024
+Republic Act No. 10173 — Data Privacy Act of the Philippines
+1.6 Overview
+The remainder of this document is organized as follows: Section 2 provides overall product context and constraints. Section 3 details all functional requirements. Section 4 covers non-functional requirements. Section 5 describes external interface requirements. Section 6 outlines use cases. Section 7 addresses data requirements. Section 8 covers system constraints and assumptions.
+2. Overall Description
+2.1 Product Perspective
+HandiLink is a standalone platform — not a module of an existing system. It consists of three main components operating in concert:
+Mobile Application (iOS and Android) — primary interface for Customers and Providers
+Web Application — administrative dashboard and optional desktop access for Customers
+Backend API Server — handles all business logic, data storage, third-party integrations, and the Reputation Engine
+HandiLink integrates with external services including a payment gateway (e.g., GCash, PayMaya, or Stripe), a mapping API (Google Maps Platform), an SMS/OTP gateway, and cloud storage for photo uploads.
+2.2 Product Functions — Summary
+The core functional areas of HandiLink are:
+Dual-Role User Registration & Verification — secure onboarding for Customers and Providers
+Provider Discovery & Search — location-based, filtered search of available Providers
+Booking Management — create, confirm, reschedule, and cancel bookings
+Real-Time Communication — in-app messaging and booking status push notifications
+Transparent Review & Remark System — structured, multi-dimensional post-service reviews
+Reputation Engine — automated trust scoring and Verified Badge assignment
+Payment Processing — integrated upfront estimates and secure payment capture
+Administrative Dashboard — content moderation, dispute resolution, and analytics
+2.3 User Classes and Characteristics
+2.3.1 Customer
+Homeowners or renters who need on-demand home repair or maintenance services. Primary pain points are lack of trust, pricing uncertainty, and difficulty finding reliable help quickly. Expects a simple, intuitive booking flow completable in under three minutes. May have low to moderate technical literacy.
+2.3.2 Provider
+Independent skilled tradespeople (plumbers, electricians, carpenters, painters, etc.) seeking to grow their client base digitally. Values fair reputation measurement, timely payouts, and a professional profile that showcases their work. Expected to be comfortable with mobile applications.
+2.3.3 System Administrator
+Anthropic-employed or Group-3-designated personnel responsible for platform health, fraud prevention, content moderation, Provider verification, and dispute resolution. Requires access to backend dashboards and elevated system permissions.
+2.4 Operating Environment
+Mobile: iOS 15+ and Android 10+ (native applications via React Native or Flutter)
+Web: Latest two major versions of Chrome, Firefox, Safari, and Edge
+Backend: Cloud-hosted (AWS or GCP), containerized via Docker, deployed with CI/CD pipelines
+Database: PostgreSQL (relational data), Redis (caching and sessions), AWS S3 (media storage)
+Network: Functions over standard mobile data (3G minimum) and Wi-Fi
+2.5 Design and Implementation Constraints
+Geographic Beta Constraint: All Beta functionality is limited to Quezon City, Philippines.
+Payment Constraint: Only standard integrated gateways are supported; no custom escrow.
+Service Category Constraint: Limited to minor-to-moderate home repairs; major construction excluded.
+Data Privacy Compliance: All data handling must comply with the Philippine Data Privacy Act (RA 10173).
+Connectivity Dependency: Real-time booking updates require internet connectivity; offline mode is limited to viewing saved Provider profiles.
+2.6 Assumptions and Dependencies
+Users will have smartphones with iOS 15+ or Android 10+.
+The third-party payment and mapping gateways maintain at least 99.5% monthly uptime.
+Providers will complete the ID and skills verification process before being listed.
+Customers will submit honest, detailed reviews after each completed service.
+SMS delivery for OTPs is reliable within Quezon City.
+3. Functional Requirements
+3.1 User Registration and Authentication
+3.1.1 Dual-Role Registration
+ID
+Priority
+Requirement
+Acceptance Criteria
+FR-01
+HIGH
+The system shall allow a new user to register as either a Customer or a Provider via email, phone number, or Google OAuth.
+User can complete registration selecting one of two roles; duplicate email/phone rejected with clear error.
+FR-02
+HIGH
+The system shall validate the user&apos;s phone number via a 6-digit OTP sent via SMS before activating the account.
+Account remains inactive until OTP is verified; OTP expires after 10 minutes.
+FR-03
+HIGH
+Provider accounts shall require submission of a valid government-issued ID and at least one proof of skill (e.g., trade certificate, portfolio photos) for manual admin review.
+Provider listing is blocked until admin approves. Admin review completed within 48 hours.
+FR-04
+MEDIUM
+The system shall support biometric login (fingerprint or Face ID) on compatible devices after initial authentication.
+Biometric login available in device settings after first successful password login.
+FR-05
+HIGH
+The system shall enforce password complexity: minimum 8 characters, one uppercase letter, one number, one special character.
+Registration/password change rejected if complexity rules not met; inline error displayed.
+3.1.2 Profile Management
+ID
+Priority
+Requirement
+Acceptance Criteria
+FR-06
+HIGH
+Customers shall be able to update their name, profile photo, address (with map pin), and payment methods.
+Changes saved immediately; profile photo resized and stored in cloud storage.
+FR-07
+HIGH
+Providers shall maintain a public-facing profile showing: full name, trade categories, service area, hourly/flat rate, portfolio photos, aggregate rating, and Verified Badge (if earned).
+Profile visible to all authenticated users; all fields editable by Provider except aggregate rating.
+FR-08
+MEDIUM
+Providers shall be able to set their availability schedule (days of week and time windows).
+Unavailable slots hidden from Customer search results.
+3.2 Provider Discovery and Search
+ID
+Priority
+Requirement
+Acceptance Criteria
+FR-09
+HIGH
+The system shall provide a search interface allowing Customers to filter Providers by: service category, distance (radius in km), minimum rating, price range, and availability.
+Search results update within 2 seconds of filter change; zero results state shown if no match.
+FR-10
+HIGH
+Search results shall default to sorting by composite score (rating + proximity) and allow re-sorting by price (ascending/descending) or rating (descending).
+Sort order updates results in-place without page reload.
+FR-11
+HIGH
+The system shall display each Provider card with: name, Verified Badge (if applicable), primary trade, aggregate star rating, distance from Customer&apos;s location, and starting rate.
+All data elements visible in card view without requiring expansion.
+FR-12
+MEDIUM
+Customers shall be able to view a map view of nearby Providers with pins colored by rating tier (green: 4.7+, yellow: 3.5-4.6, red: below 3.5).
+Map pins load within 3 seconds; tapping a pin opens Provider mini-profile card.
+FR-13
+LOW
+The system shall support search by Provider name (partial match, case-insensitive).
+Matching results appear in a dropdown within 1 second of typing.
+3.3 Booking Management
+ID
+Priority
+Requirement
+Acceptance Criteria
+FR-14
+HIGH
+Customers shall be able to initiate a booking from a Provider&apos;s profile page by selecting: service type, preferred date/time, and a brief description of the issue (minimum 20 characters).
+Booking form validates all fields before submission; calendar only shows Provider&apos;s available slots.
+FR-15
+HIGH
+The system shall display a price estimate (flat rate or hourly estimate with cap) before the Customer confirms the booking.
+Estimate shown on a confirmation screen; Customer must explicitly accept before proceeding.
+FR-16
+HIGH
+Upon booking submission, the Provider shall receive a push notification and in-app alert with booking details and must accept or decline within 30 minutes.
+Customer receives real-time status update; auto-decline and re-search suggestion triggered if no response in 30 minutes.
+FR-17
+HIGH
+Customers and Providers shall each be able to cancel a confirmed booking up to 2 hours before the scheduled start time without penalty.
+Cancellation timestamps validated server-side; penalty applied (Customer: 50% charge; Provider: no-show flag) for cancellations within 2-hour window.
+FR-18
+MEDIUM
+The system shall allow rescheduling of a confirmed booking by the Customer up to 4 hours before the start time, subject to Provider&apos;s availability.
+Provider notified of reschedule request; can accept or counter-propose.
+FR-19
+HIGH
+The system shall maintain a booking history for both Customers and Providers, accessible from their respective dashboards.
+Bookings categorized as: Upcoming, In Progress, Completed, Cancelled.
+3.4 Review and Remark System
+ID
+Priority
+Requirement
+Acceptance Criteria
+FR-20
+HIGH
+After a booking is marked Complete, the Customer shall be prompted (within 24 hours) to submit a review using a multi-dimensional 5-star rating across three dimensions: Punctuality, Technical Skill, and Communication.
+Review prompt appears as push notification and in-app banner; rating on each dimension is mandatory.
+FR-21
+HIGH
+The review form shall require a written remark of at least 50 characters before submission is allowed.
+Character count shown in real-time; submission button disabled until threshold met.
+FR-22
+MEDIUM
+Customers may optionally attach up to 5 before/after photos to a review (max 5MB each, JPEG/PNG only).
+Photos compressed and stored on cloud; displayed on Provider&apos;s profile in a gallery view.
+FR-23
+HIGH
+Providers shall be able to submit a single written response to any review they receive, limited to 300 characters.
+Response appears below the original review; cannot be edited after submission.
+FR-24
+HIGH
+The system shall compute the aggregate rating displayed on a Provider&apos;s profile as the unweighted average of all three dimension scores across all completed bookings.
+Aggregate rating updates within 5 minutes of a review being submitted; displayed to two decimal places.
+FR-25
+MEDIUM
+Any user shall be able to flag a review as inappropriate. Flagged reviews shall be queued for admin review.
+Admin receives alert for flagged reviews; review hidden from public after 3 flags pending admin decision.
+3.5 Reputation Engine
+ID
+Priority
+Requirement
+Acceptance Criteria
+FR-26
+HIGH
+The Reputation Engine shall automatically award the Verified Badge to any Provider whose aggregate rating meets or exceeds 4.7 stars AND who has zero active no-show flags AND who has completed at least 10 bookings.
+Badge appears on profile within 1 hour of all criteria being met; badge removed automatically if criteria are no longer met.
+FR-27
+HIGH
+The system shall issue a no-show flag to a Provider when a Customer reports a confirmed Provider who failed to attend, and admin confirms the report.
+Flag visible on internal admin view; three flags within 90 days triggers account suspension review.
+FR-28
+MEDIUM
+The system shall generate a monthly performance report for each Provider displaying: total bookings, average ratings per dimension, cancellation rate, no-show flags, and earnings.
+Report available for download as PDF from Provider dashboard.
+3.6 Payment Processing
+ID
+Priority
+Requirement
+Acceptance Criteria
+FR-29
+HIGH
+The system shall integrate with at least two payment gateways (GCash and PayMaya) and one card processor (Visa/Mastercard via Stripe or equivalent).
+Customers can complete payment using any supported method at booking confirmation.
+FR-30
+HIGH
+Payment shall be held in escrow from the time of booking confirmation and released to the Provider within 24 hours of the Customer marking the booking as Complete.
+Payment release timestamp logged; Provider receives push notification with payout amount.
+FR-31
+HIGH
+The system shall issue a digital receipt to both the Customer and Provider upon payment release, summarizing: service description, total amount, platform fee (if any), and Provider payout.
+Receipt accessible from booking history; optionally emailed to registered address.
+FR-32
+MEDIUM
+The system shall apply a refund policy: full refund for cancellations made more than 2 hours before the scheduled start; 50% refund within the 2-hour window.
+Refund processed to original payment method within 3-5 business days.
+3.7 In-App Communication
+ID
+Priority
+Requirement
+Acceptance Criteria
+FR-33
+HIGH
+The system shall provide a secure in-app messaging channel between a Customer and their booked Provider, active from booking confirmation until 48 hours after completion.
+Messages delivered in real-time (under 1 second on stable connection); message history retained for 6 months.
+FR-34
+HIGH
+The system shall send push notifications for: booking confirmation, Provider acceptance/decline, booking reminders (24h and 2h before), status changes, and review prompts.
+Notifications delivered within 30 seconds of triggering event; users can manage notification preferences.
+FR-35
+MEDIUM
+The messaging system shall filter and block messages containing personal contact details (phone numbers, external URLs) to maintain platform safety.
+Filter detects and redacts phone number patterns and raw URLs; user notified of redaction.
+3.8 Administrative Dashboard
+ID
+Priority
+Requirement
+Acceptance Criteria
+FR-36
+HIGH
+Administrators shall be able to approve, reject, or request additional documents for Provider verification applications.
+Decision logged with timestamp and admin ID; Provider notified via email and in-app.
+FR-37
+HIGH
+Administrators shall be able to suspend or permanently ban Customer or Provider accounts with a mandatory reason field.
+Suspended accounts cannot log in; reinstatement requires admin action.
+FR-38
+MEDIUM
+The admin dashboard shall display real-time platform metrics: active bookings, new registrations (last 24h/7d/30d), revenue, top-rated Providers, and flagged reviews queue.
+Metrics refresh every 60 seconds; exportable as CSV.
+FR-39
+MEDIUM
+Administrators shall be able to manage service categories (create, rename, deactivate) without a code deployment.
+Category changes reflected in Customer search within 5 minutes.
+4. Non-Functional Requirements
+4.1 Performance
+NFR-01 [Response Time]: All API endpoints shall respond in under 500ms at the 95th percentile under normal load (up to 500 concurrent users).
+NFR-02 [Search Latency]: Provider search results shall render within 2 seconds end-to-end including geolocation filtering.
+NFR-03 [Booking Flow]: A Customer shall be able to complete the full search-to-confirmed-booking flow in under 3 minutes under normal conditions.
+NFR-04 [Image Upload]: Profile and review photos shall upload and display within 5 seconds on a stable 4G connection.
+4.2 Scalability
+NFR-05: The backend architecture shall support horizontal scaling to handle up to 10,000 concurrent users without degradation below the performance thresholds in NFR-01.
+NFR-06: The database design shall support at least 100,000 registered users and 500,000 bookings without requiring schema redesign.
+4.3 Availability and Reliability
+NFR-07 [Uptime]: The platform shall achieve at least 99.5% monthly uptime (maximum ~3.6 hours downtime/month).
+NFR-08 [Backup]: Full database backups shall be performed daily; point-in-time recovery shall be available for the past 7 days.
+NFR-09 [Fault Tolerance]: The system shall gracefully degrade if the payment gateway is unavailable — allowing bookings to be initiated but payment completion deferred — with a clear user notification.
+4.4 Security
+NFR-10 [Encryption in Transit]: All client-server communication shall use TLS 1.2 or higher.
+NFR-11 [Encryption at Rest]: All personally identifiable information (PII) shall be encrypted at rest using AES-256.
+NFR-12 [Authentication]: All API endpoints (except registration and login) shall require a valid JWT token. Tokens expire after 24 hours; refresh tokens valid for 30 days.
+NFR-13 [Rate Limiting]: Login attempts shall be limited to 5 failed attempts per 15-minute window per IP before CAPTCHA is triggered.
+NFR-14 [Data Privacy Compliance]: The system shall comply with the Philippine Data Privacy Act (RA 10173), including the ability for users to request data export and account deletion.
+NFR-15 [Vulnerability Management]: A vulnerability scan shall be performed before each production release; critical vulnerabilities must be remediated before deployment.
+4.5 Usability
+NFR-16 [Onboarding]: A new Customer shall be able to complete registration and place their first booking within 5 minutes without external assistance.
+NFR-17 [Accessibility]: The UI shall conform to WCAG 2.1 Level AA guidelines, including sufficient color contrast, scalable text, and screen reader support.
+NFR-18 [Language]: The application shall be available in English and Filipino (Tagalog). Language can be toggled in user settings.
+NFR-19 [Error Messages]: All error messages shall be written in plain language and include actionable guidance (e.g., &apos;Invalid phone number. Please enter a valid 11-digit Philippine mobile number starting with 09.&apos;).
+4.6 Maintainability
+NFR-20 [Code Quality]: Backend code shall achieve at least 80% unit test coverage as measured by automated CI pipelines.
+NFR-21 [Documentation]: All API endpoints shall be documented in OpenAPI 3.0 format, auto-generated from code annotations.
+NFR-22 [Deployment]: The platform shall use a CI/CD pipeline enabling zero-downtime deployments with automated rollback on failure.
+4.7 Portability
+NFR-23: The mobile application shall be available on both the Apple App Store and Google Play Store.
+NFR-24: The web administrative dashboard shall function without installing browser plugins.
+5. External Interface Requirements
+5.1 User Interfaces
+5.1.1 Mobile Application Screens
+Onboarding & Registration: Role selector, form fields with real-time validation, OTP verification screen.
+Home / Discovery: Search bar, filter chips, provider card list, toggle to map view.
+Provider Profile: Photo gallery, rating breakdown, booking CTA button, reviews list.
+Booking Flow: Service type selector, calendar/time picker, issue description, price estimate, payment screen, confirmation screen.
+Messaging: Real-time chat thread per booking, message input with character filter.
+Review Screen: Star selectors per dimension, remark text area with character counter, photo attachment.
+Dashboard (Customer): Upcoming/past bookings, favorite providers, payment history.
+Dashboard (Provider): Booking queue, earnings summary, profile completeness indicator, performance metrics.
+5.2 Hardware Interfaces
+GPS / Location Services: Required for Provider proximity search and map view. The system requests location permissions on first launch.
+Camera: Required for profile photo capture and review photo attachments. The system requests camera permissions when relevant features are accessed.
+Biometric Sensor: Fingerprint or Face ID used for subsequent authentication. Gracefully falls back to password if unavailable.
+5.3 Software Interfaces
+System
+Purpose
+Notes
+Google Maps Platform
+Geolocation, mapping, and distance calculation
+Requires API key; billing tied to usage. Fallback to OpenStreetMap if quota exceeded.
+GCash / PayMaya
+Primary Philippine mobile payment gateways
+Integration via official merchant APIs. Sandbox environment for testing.
+Stripe
+Card payment processing (Visa/Mastercard)
+PCI-DSS compliant. Webhook events used for payment status updates.
+Firebase Cloud Messaging
+Push notifications (Android and iOS)
+APNs certificate required for iOS. Notification payload under 4KB.
+Twilio / Semaphore
+SMS OTP delivery
+Semaphore preferred for PH local numbers. Fallback chain if delivery fails.
+AWS S3 / GCS
+Profile and review photo storage
+Signed URLs used for secure access. CDN-backed for fast delivery.
+Google OAuth 2.0
+Social login option for Customers
+Scopes limited to email and profile. No write access to Google data.
+5.4 Communications Interfaces
+All client-server communication uses HTTPS (TLS 1.2+) over REST APIs returning JSON.
+Real-time updates (booking status, messages) use WebSocket connections (Socket.IO or similar).
+Push notifications delivered via FCM for both Android and iOS (via APNs bridge).
+6. Key Use Cases
+UC-01: Customer Books a Provider
+Use Case ID
+UC-01
+Name
+Customer Books a Service Provider
+Actor(s)
+Customer, Provider, Payment Gateway
+Preconditions
+Customer is authenticated. Provider has an active, verified profile with available slots.
+Main Flow
+1. Customer opens the app and enters a service category and current location.
+2. System returns a filtered list of nearby Providers sorted by composite score.
+3. Customer selects a Provider and reviews their profile, ratings, and reviews.
+4. Customer taps &apos;Book Now,&apos; selects a date/time and service type, and enters a description.
+5. System displays a price estimate. Customer accepts and selects payment method.
+6. System sends booking request to Provider.
+7. Provider receives push notification, reviews request, and accepts within 30 minutes.
+8. System confirms booking to Customer, deducts payment (held in escrow), and sends both parties a calendar reminder.
+Alternative Flow
+7a. Provider declines — Customer is notified and prompted to choose another Provider. 7b. Provider does not respond in 30 minutes — booking auto-cancelled; Customer not charged.
+Postconditions
+A booking record exists in state &apos;Confirmed.&apos; Escrow payment held. Both parties receive calendar/push reminders.
+UC-02: Provider Completes Service and Gets Reviewed
+Use Case ID
+UC-02
+Name
+Service Completion and Review Submission
+Actor(s)
+Provider, Customer, Reputation Engine
+Preconditions
+Booking is in &apos;Confirmed&apos; state. Provider has attended the service appointment.
+Main Flow
+1. Provider marks the booking as &apos;Complete&apos; in the app.
+2. System changes booking status to &apos;Pending Review&apos; and releases a review prompt to the Customer.
+3. Customer opens the review prompt within 24 hours.
+4. Customer rates the Provider on Punctuality, Technical Skill, and Communication (1-5 stars each).
+5. Customer enters a remark (minimum 50 characters) and optionally attaches before/after photos.
+6. Customer submits the review.
+7. System saves the review, updates the Provider&apos;s aggregate rating, and releases the escrowed payment to the Provider within 24 hours.
+8. Reputation Engine re-evaluates the Provider&apos;s eligibility for the Verified Badge.
+Alternative Flow
+3a. Customer does not review within 24 hours — System sends a reminder push notification. After 72 hours, booking auto-closes without a review; payment still released.
+Postconditions
+Review is publicly visible on Provider&apos;s profile. Aggregate rating updated. Payment released. Verified Badge status re-evaluated.
+UC-03: Provider Onboarding and Verification
+Use Case ID
+UC-03
+Name
+Provider Registration and Admin Verification
+Actor(s)
+Provider, Administrator
+Preconditions
+Individual has a valid Philippine government ID and proof of trade skill.
+Main Flow
+1. Provider selects &apos;Register as Provider&apos; and completes registration form.
+2. Provider verifies phone number via OTP.
+3. Provider uploads government-issued ID and skill documentation (certificate or portfolio photos).
+4. System queues the application for admin review.
+5. Admin reviews submitted documents in the admin dashboard within 48 hours.
+6. Admin approves the application.
+7. System activates the Provider&apos;s public profile and sends an approval notification.
+Alternative Flow
+6a. Admin requests additional documents — Provider notified via email and in-app; application remains pending. 6b. Admin rejects — Provider notified with rejection reason; may re-apply after 30 days.
+Postconditions
+Provider profile is publicly listed and discoverable by Customers.
+7. Data Requirements
+7.1 Core Data Entities
+The following entities constitute the primary data model for HandiLink:
+7.1.1 User
+Fields: user_id (UUID), role (ENUM: customer|provider|admin), full_name, email, phone_number, hashed_password, profile_photo_url, is_verified, is_active, created_at, updated_at
+Constraints: email and phone_number must be unique. role is immutable after registration.
+7.1.2 Provider Profile
+Fields: provider_id (FK to user_id), bio, trade_categories (array), service_area_radius_km, hourly_rate, flat_rates (JSON), portfolio_photo_urls (array), aggregate_rating, no_show_flag_count, is_verified_badge, government_id_url (admin-only), availability_schedule (JSON)
+Constraints: aggregate_rating computed field; not editable directly.
+7.1.3 Booking
+Fields: booking_id, customer_id (FK), provider_id (FK), service_type, scheduled_at, status (ENUM: pending|confirmed|in_progress|completed|cancelled), description, price_estimate, actual_amount, payment_status, created_at, updated_at
+Constraints: scheduled_at must be in the future at creation time. status transitions are enforced by the backend state machine.
+7.1.4 Review
+Fields: review_id, booking_id (FK, unique — one review per booking), customer_id (FK), provider_id (FK), rating_punctuality (1-5), rating_skill (1-5), rating_communication (1-5), remark (min 50 chars), photo_urls (array, max 5), provider_response (max 300 chars), is_flagged, created_at
+7.1.5 Message
+Fields: message_id, booking_id (FK), sender_id (FK), content, is_redacted, sent_at
+Constraints: content scanned on save; PII patterns replaced with [REDACTED].
+7.1.6 Payment Transaction
+Fields: transaction_id, booking_id (FK), gateway (ENUM: gcash|paymaya|stripe), amount, platform_fee, provider_payout, status (ENUM: held|released|refunded|failed), gateway_reference_id, created_at, updated_at
+7.2 Data Retention Policy
+Active user data: retained indefinitely while account is active.
+Messages: retained for 6 months post-booking completion, then archived.
+Review photos: retained for 2 years, then purged from CDN.
+Payment transactions: retained for 7 years to comply with Philippine BIR regulations.
+Deleted accounts: PII anonymized within 30 days of deletion request; transaction records anonymized but retained for compliance.
+8. System Constraints and Risks
+8.1 Constraints Summary
+Type
+Constraint
+Implication
+External
+User Dependency
+Platform trust quality depends on customers submitting honest, detailed reviews. Minimum character count and photo prompts mitigate but cannot eliminate this risk.
+External
+API Stability
+Payment and map gateways may have outages. Graceful degradation and fallback messaging are required in the booking flow.
+External
+Offline Safety
+Digital ID verification reduces but cannot eliminate the risk of real-world misconduct. Physical safety features (e.g., share ETA) are recommended as future enhancements.
+Intentional
+Geographic Scope
+Beta is limited to Quezon City. No location outside this boundary can be selected as a service area.
+Intentional
+Service Category
+Only minor-to-moderate home repairs. Major construction services are excluded.
+Intentional
+Payment Handling
+Standard gateway integration only. Custom escrow logic is out of scope for Beta.
+8.2 Key Risks and Mitigations
+Review Gaming: Providers might solicit fake positive reviews. Mitigation: Reviews only unlocked for verified, completed bookings. Admin tools to detect anomalous review patterns.
+Provider Supply in Beta: Initial lack of Provider supply in QC could harm user experience. Mitigation: Pre-launch Provider recruitment campaign targeting trade schools and informal networks in QC.
+Payment Fraud: Disputed transactions or chargebacks. Mitigation: Escrow model, booking documentation via chat logs and photos, chargeback dispute process with gateway.
+Data Breach: PII exposure. Mitigation: AES-256 encryption at rest, TLS in transit, regular penetration testing, DPA-compliant breach notification process.
+9. Appendix — Requirement Traceability Matrix (RTM)
+The following matrix maps each functional requirement to its related objective, use case, and test category.
+FR ID
+Requirement Summary
+Objective
+Related UC
+Test Type
+FR-01
+Dual-role user registration
+Secure Onboarding
+UC-03
+Integration
+FR-02
+OTP phone verification
+Secure Onboarding
+UC-03
+Integration
+FR-03
+Provider ID & skill verification
+Secure Onboarding
+UC-03
+Manual/UAT
+FR-09
+Provider search with filters
+Rapid Booking
+UC-01
+Functional
+FR-14
+Booking initiation
+Rapid Booking
+UC-01
+Functional
+FR-15
+Price estimate display
+Rapid Booking
+UC-01
+Functional
+FR-16
+Provider booking notification
+Rapid Booking
+UC-01
+Integration
+FR-20
+Multi-dimension star rating
+Reputation Engine
+UC-02
+Functional
+FR-21
+50-character review minimum
+Reputation Engine
+UC-02
+Functional
+FR-24
+Aggregate rating computation
+Reputation Engine
+UC-02
+Unit
+FR-26
+Verified Badge auto-award
+Reputation Engine
+UC-02
+Unit
+FR-27
+No-show flag issuance
+Reputation Engine
+UC-02
+Functional
+FR-29
+Payment gateway integration
+Rapid Booking
+UC-01
+Integration
+FR-30
+Escrow and payout
+Rapid Booking
+UC-02
+Integration
+FR-33
+In-app messaging
+Rapid Booking
+UC-01/02
+Functional
+FR-36
+Admin Provider approval
+Secure Onboarding
+UC-03
+Manual/UAT
+— End of HandiLink Software Requirements Specification v1.0 —
+Group 3 | GV101 | Quezon City, Philippines | 2026
