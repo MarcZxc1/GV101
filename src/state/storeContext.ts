@@ -1,12 +1,12 @@
 import { createContext, useContext } from "react";
 import type {
   AppState,
+  AuthSession,
   Booking,
   BookingStatus,
   Message,
   PaymentMethod,
   Review,
-  Role,
   ServiceCategory,
   ProviderVerificationStatus,
 } from "./types";
@@ -14,9 +14,10 @@ import type {
 export type Store = {
   state: AppState;
   actions: {
-    setRole: (role: Role) => void;
     setCustomerName: (name: string) => void;
     markAllNotificationsRead: () => void;
+    login: (session: AuthSession) => void;
+    logout: () => void;
     createBooking: (args: {
       providerId: string;
       category: ServiceCategory;

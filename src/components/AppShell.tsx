@@ -35,8 +35,8 @@ function useRouteScrollRestoration() {
 function TopNav() {
   const { state, actions } = useAppStore();
   const navigate = useNavigate();
-  const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const session = state.auth.session;
 
   const navClass = ({ isActive }: { isActive: boolean }) =>
     `rounded-xl px-3 py-2 text-sm font-medium transition ${
@@ -75,24 +75,30 @@ function TopNav() {
         </nav>
 
         <div className="flex items-center gap-2">
-          <div className="hidden text-right text-xs text-slate-600 sm:block">
-            <div className="font-medium text-slate-900">
-              {state.role === "customer" ? "Customer mode" : "Provider mode"}
-            </div>
-            <div className="truncate">{state.customerName}</div>
-          </div>
-          <button
-            type="button"
-            className="btn btn-secondary px-3 py-2 text-sm"
-            onClick={() => {
-              const next = state.role === "customer" ? "provider" : "customer";
-              actions.setRole(next);
-              if (location.pathname === "/") return;
-              navigate(next === "customer" ? "/customer" : "/provider");
-            }}
-          >
-            Switch to {state.role === "customer" ? "Provider" : "Customer"}
-          </button>
+          {session ? (
+            <>
+              <div className="hidden text-right text-xs text-slate-600 sm:block">
+                <div className="font-medium text-slate-900">
+                  {session.displayName}
+                </div>
+                <div className="capitalize">{session.role} account</div>
+              </div>
+              <button
+                type="button"
+                className="btn btn-secondary px-3 py-2 text-sm"
+                onClick={() => {
+                  actions.logout();
+                  navigate("/");
+                }}
+              >
+                Log out
+              </button>
+            </>
+          ) : (
+            <Link to="/login" className="btn btn-secondary px-3 py-2 text-sm">
+              Sign in
+            </Link>
+          )}
           <button
             type="button"
             className="btn btn-ghost px-3 py-2 text-sm md:hidden"
@@ -142,6 +148,27 @@ function TopNav() {
             >
               Admin
             </NavLink>
+            {session ? (
+              <button
+                type="button"
+                className="btn btn-secondary px-3 py-2 text-sm"
+                onClick={() => {
+                  actions.logout();
+                  setMobileOpen(false);
+                  navigate("/");
+                }}
+              >
+                Log out
+              </button>
+            ) : (
+              <NavLink
+                to="/login"
+                className={navClass}
+                onClick={() => setMobileOpen(false)}
+              >
+                Sign in
+              </NavLink>
+            )}
           </nav>
         </div>
       ) : null}
@@ -153,6 +180,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   useRouteScrollRestoration();
   const location = useLocation();
   const { state } = useAppStore();
+  const isAuthRoute = location.pathname === "/login";
 
   const breadcrumbs = useMemo(() => {
     const path = location.pathname;
@@ -213,14 +241,16 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="app-shell">
-      <a
-        href="#main-content"
-        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-60 rounded-xl bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow"
-      >
-        Skip to content
-      </a>
-      <TopNav />
-      {breadcrumbs.length > 0 ? (
+      {!isAuthRoute ? (
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-60 rounded-xl bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow"
+        >
+          Skip to content
+        </a>
+      ) : null}
+      {!isAuthRoute ? <TopNav /> : null}
+      {!isAuthRoute && breadcrumbs.length > 0 ? (
         <div className="border-b border-slate-200/70 bg-white/60">
           <nav
             className="mx-auto flex max-w-6xl items-center gap-2 px-4 py-2 text-xs text-slate-600"
@@ -251,22 +281,26 @@ export function AppShell({ children }: { children: ReactNode }) {
       ) : null}
       <main
         id="main-content"
-        className="mx-auto min-h-[65vh] max-w-6xl px-4 py-6"
+        className={
+          isAuthRoute ? "min-h-dvh" : "mx-auto min-h-[65vh] max-w-6xl px-4 py-6"
+        }
       >
         {children}
       </main>
-      <footer className="border-t border-slate-200/70 bg-white">
-        <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-6 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <span className="font-medium text-slate-900">HandiLink</span> —
-            Reputation as currency.
+      {!isAuthRoute ? (
+        <footer className="border-t border-slate-200/70 bg-white">
+          <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-6 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <span className="font-medium text-slate-900">HandiLink</span> —
+              Reputation as currency.
+            </div>
+            <div className="text-xs">
+              Demo build: in-memory state only · QC-only categories: Plumbing,
+              Electrical, General Maintenance
+            </div>
           </div>
-          <div className="text-xs">
-            Demo build: in-memory state only · QC-only categories: Plumbing,
-            Electrical, General Maintenance
-          </div>
-        </div>
-      </footer>
+        </footer>
+      ) : null}
     </div>
   );
 }

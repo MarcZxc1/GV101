@@ -3,6 +3,7 @@ import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { AppShell } from "./components/AppShell.tsx";
 import { PageLoader } from "./components/PageLoader.tsx";
 import { PageTransition } from "./components/PageTransition.tsx";
+import { RequireAuth } from "./components/auth/RequireAuth.tsx";
 
 const LandingPage = lazy(() =>
   import("./pages/LandingPage.tsx").then((m) => ({ default: m.LandingPage })),
@@ -45,6 +46,11 @@ const AdminDashboardPage = lazy(() =>
     default: m.AdminDashboardPage,
   })),
 );
+const LoginPage = lazy(() =>
+  import("./components/auth/LoginPage.tsx").then((m) => ({
+    default: m.default,
+  })),
+);
 
 export default function App() {
   const location = useLocation();
@@ -60,16 +66,56 @@ export default function App() {
               path="/providers/:providerId"
               element={<ProviderProfilePage />}
             />
-            <Route path="/book/:providerId" element={<BookingCheckoutPage />} />
+            <Route
+              path="/book/:providerId"
+              element={
+                <RequireAuth role="customer">
+                  <BookingCheckoutPage />
+                </RequireAuth>
+              }
+            />
             <Route
               path="/review/:bookingId"
-              element={<ReviewSubmissionPage />}
+              element={
+                <RequireAuth role="customer">
+                  <ReviewSubmissionPage />
+                </RequireAuth>
+              }
             />
-            <Route path="/messages/:bookingId" element={<MessagesPage />} />
-            <Route path="/admin" element={<AdminDashboardPage />} />
+            <Route
+              path="/messages/:bookingId"
+              element={
+                <RequireAuth>
+                  <MessagesPage />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/admin"
+              element={
+                <RequireAuth role="provider">
+                  <AdminDashboardPage />
+                </RequireAuth>
+              }
+            />
+            <Route path="/login" element={<LoginPage />} />
 
-            <Route path="/customer" element={<CustomerDashboardPage />} />
-            <Route path="/provider" element={<ProviderDashboardPage />} />
+            <Route
+              path="/customer"
+              element={
+                <RequireAuth role="customer">
+                  <CustomerDashboardPage />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/provider"
+              element={
+                <RequireAuth role="provider">
+                  <ProviderDashboardPage />
+                </RequireAuth>
+              }
+            />
 
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

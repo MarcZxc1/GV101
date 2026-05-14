@@ -3,20 +3,22 @@ import { initialState } from "../data/mock";
 import { StoreContext, type Store } from "./storeContext";
 import type {
   AppState,
+  AuthSession,
   Booking,
   BookingStatus,
   InAppNotification,
   Message,
   Review,
-  Role,
   ProviderVerificationStatus,
 } from "./types";
 
 type Action =
-  | { type: "role.set"; role: Role }
   | { type: "customer.setName"; name: string }
   | { type: "notify.push"; notification: InAppNotification }
   | { type: "notify.readAll" }
+  | { type: "auth.hydrate"; session: AuthSession | null }
+  | { type: "auth.login"; session: AuthSession }
+  | { type: "auth.logout" }
   | { type: "booking.create"; booking: Booking }
   | { type: "booking.setStatus"; bookingId: string; status: BookingStatus }
   | { type: "booking.cancel"; bookingId: string; reason: string; at: string }
@@ -33,12 +35,31 @@ type Action =
   | { type: "message.send"; message: Message }
   | { type: "system.tick"; nowIso: string };
 
+const SESSION_STORAGE_KEY = "handilink.session";
+const guestProfile = {
+  role: initialState.role,
+  customerName: initialState.customerName,
+};
+
+function applySession(state: AppState, session: AuthSession | null): AppState {
+  return {
+    ...state,
+    auth: { session },
+    role: session?.role ?? guestProfile.role,
+    customerName: session?.displayName ?? guestProfile.customerName,
+  };
+}
+
 function reducer(state: AppState, action: Action): AppState {
   switch (action.type) {
-    case "role.set":
-      return { ...state, role: action.role };
     case "customer.setName":
       return { ...state, customerName: action.name };
+    case "auth.hydrate":
+      return applySession(state, action.session);
+    case "auth.login":
+      return applySession(state, action.session);
+    case "auth.logout":
+      return applySession(state, null);
     case "notify.push":
       return {
         ...state,
@@ -169,6 +190,37 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, initialState);
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+    const raw = window.localStorage.getItem(SESSION_STORAGE_KEY);
+    if (!raw) {
+      dispatch({ type: "auth.hydrate", session: null });
+      return;
+    }
+    try {
+      const session = JSON.parse(raw) as AuthSession;
+      if (!session?.email || !session?.role || !session?.displayName) {
+        throw new Error("Invalid session");
+      }
+      dispatch({ type: "auth.hydrate", session });
+    } catch {
+      window.localStorage.removeItem(SESSION_STORAGE_KEY);
+      dispatch({ type: "auth.hydrate", session: null });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (state.auth.session) {
+      window.localStorage.setItem(
+        SESSION_STORAGE_KEY,
+        JSON.stringify(state.auth.session),
+      );
+    } else {
+      window.localStorage.removeItem(SESSION_STORAGE_KEY);
+    }
+  }, [state.auth.session]);
+
+  useEffect(() => {
     const t = setInterval(() => {
       dispatch({ type: "system.tick", nowIso: new Date().toISOString() });
     }, 1000);
@@ -179,14 +231,17 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     return {
       state,
       actions: {
-        setRole(role) {
-          dispatch({ type: "role.set", role });
-        },
         setCustomerName(name) {
           dispatch({ type: "customer.setName", name });
         },
         markAllNotificationsRead() {
           dispatch({ type: "notify.readAll" });
+        },
+        login(session) {
+          dispatch({ type: "auth.login", session });
+        },
+        logout() {
+          dispatch({ type: "auth.logout" });
         },
         createBooking({
           providerId,

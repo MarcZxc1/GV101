@@ -103,7 +103,7 @@ export function MessagesPage() {
               if (!t) return;
               actions.sendMessage({
                 bookingId: booking.id,
-                sender: state.role,
+                sender: state.auth.session?.role ?? state.role,
                 text: t,
               });
               setText("");
