@@ -1,7 +1,7 @@
 import { useDeferredValue, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ProviderCard } from "../components/ProviderCard";
-import { useAppStore } from "../state/store";
+import { useAppStore } from "../state/storeContext";
 import type { ServiceCategory } from "../state/types";
 import { haversineKm } from "../utils/geo";
 import { providerOverallRating } from "../utils/reputation";
@@ -121,7 +121,9 @@ export function MarketplacePage() {
             </span>
             <select
               value={category}
-              onChange={(e) => setCategory(e.target.value as any)}
+              onChange={(e) =>
+                setCategory(e.target.value as (typeof categories)[number])
+              }
               className="select"
             >
               {categories.map((c) => (

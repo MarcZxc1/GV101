@@ -6,7 +6,7 @@ import {
   useNavigate,
   useNavigationType,
 } from "react-router-dom";
-import { useAppStore } from "../state/store";
+import { useAppStore } from "../state/storeContext";
 
 function useRouteScrollRestoration() {
   const location = useLocation();
@@ -15,8 +15,9 @@ function useRouteScrollRestoration() {
 
   useEffect(() => {
     const key = `${location.pathname}${location.search}`;
+    const positions = positionsRef.current;
     return () => {
-      positionsRef.current.set(key, window.scrollY);
+      positions.set(key, window.scrollY);
     };
   }, [location.pathname, location.search]);
 

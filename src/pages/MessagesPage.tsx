@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { useAppStore } from "../state/store";
+import { useAppStore } from "../state/storeContext";
 
 export function MessagesPage() {
   const { bookingId } = useParams();

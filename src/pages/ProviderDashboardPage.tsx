@@ -1,8 +1,10 @@
 import { Link } from "react-router-dom";
-import { useAppStore } from "../state/store";
+import { useNow } from "../hooks/useNow";
+import { useAppStore } from "../state/storeContext";
 
 export function ProviderDashboardPage() {
   const { state, actions } = useAppStore();
+  const now = useNow(1000);
 
   const requests = state.bookings.filter((b) => b.status === "requested");
   const active = state.bookings.filter((b) =>
@@ -35,10 +37,10 @@ export function ProviderDashboardPage() {
       <PortalSection title="Job requests" empty="No incoming requests yet.">
         {requests.map((b) => {
           const provider = state.providers.find((p) => p.id === b.providerId);
-          const remainingMs = Math.max(
-            0,
-            new Date(b.providerResponseDueAt).getTime() - Date.now(),
-          );
+          const remainingMs =
+            now > 0
+              ? Math.max(0, new Date(b.providerResponseDueAt).getTime() - now)
+              : 0;
           const remainingMin = Math.ceil(remainingMs / 60000);
           return (
             <div key={b.id} className="card">

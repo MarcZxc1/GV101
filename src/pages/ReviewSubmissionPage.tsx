@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Stars } from "../components/Stars";
-import { useAppStore } from "../state/store";
+import { useAppStore } from "../state/storeContext";
 import { clampRating, overallFromDimensions } from "../utils/reputation";
 
 export function ReviewSubmissionPage() {

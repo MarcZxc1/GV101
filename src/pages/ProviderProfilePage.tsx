@@ -3,7 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { EvidenceGallery } from "../components/EvidenceGallery";
 import { Stars } from "../components/Stars";
 import { VerifiedBadge } from "../components/VerifiedBadge";
-import { useAppStore } from "../state/store";
+import { useAppStore } from "../state/storeContext";
 import {
   isVerifiedProvider,
   providerOverallRating,

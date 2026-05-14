@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { useAppStore } from "../state/store";
+import { useAppStore } from "../state/storeContext";
 import type { ProviderVerificationStatus } from "../state/types";
 
 export function AdminDashboardPage() {

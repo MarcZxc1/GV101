@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { PriceBreakdown } from "../components/PriceBreakdown";
-import { useAppStore } from "../state/store";
+import { useAppStore } from "../state/storeContext";
 import type { PaymentMethod } from "../state/types";
 
 export function BookingCheckoutPage() {

@@ -1,10 +1,12 @@
 import { Link, useSearchParams } from "react-router-dom";
-import { useAppStore } from "../state/store";
+import { useNow } from "../hooks/useNow";
+import { useAppStore } from "../state/storeContext";
 
 export function CustomerDashboardPage() {
   const { state, actions } = useAppStore();
   const [params] = useSearchParams();
   const newId = params.get("new");
+  const now = useNow(1000);
 
   const active = state.bookings.filter((b) =>
     ["requested", "accepted", "in_progress"].includes(b.status),
@@ -85,13 +87,13 @@ export function CustomerDashboardPage() {
 
       <Section title="Active bookings" empty="No active bookings yet.">
         {active.map((b) => (
-          <BookingRow key={b.id} bookingId={b.id} />
+          <BookingRow key={b.id} bookingId={b.id} now={now} />
         ))}
       </Section>
 
       <Section title="History" empty="No completed bookings yet.">
         {history.map((b) => (
-          <BookingRow key={b.id} bookingId={b.id} />
+          <BookingRow key={b.id} bookingId={b.id} now={now} />
         ))}
       </Section>
     </div>
@@ -122,7 +124,7 @@ function Section({
   );
 }
 
-function BookingRow({ bookingId }: { bookingId: string }) {
+function BookingRow({ bookingId, now }: { bookingId: string; now: number }) {
   const { state, actions } = useAppStore();
   const b = state.bookings.find((x) => x.id === bookingId);
   if (!b) return null;
@@ -134,8 +136,8 @@ function BookingRow({ bookingId }: { bookingId: string }) {
     b.priceQuotePhp.platformTrustFee;
 
   const remainingMs =
-    b.status === "requested"
-      ? Math.max(0, new Date(b.providerResponseDueAt).getTime() - Date.now())
+    b.status === "requested" && now > 0
+      ? Math.max(0, new Date(b.providerResponseDueAt).getTime() - now)
       : 0;
   const remainingMin = Math.ceil(remainingMs / 60000);
 
