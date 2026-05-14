@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap");
 @import "tailwindcss";
 
 @theme {
@@ -11,18 +12,173 @@
   --color-brand-700: #1d4ed8;
   --color-brand-800: #1e40af;
   --color-brand-900: #1e3a8a;
+  --color-brand-950: #172554;
 
   --color-trust-500: #22c55e; /* Trust-Green */
   --color-ink: #0b1220;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f8fafc;
+  --color-surface-strong: #f1f5f9;
 }
 
 @layer base {
   :root {
     color: var(--color-ink);
-    background: white;
+    background: var(--color-surface-muted);
+    --font-sans: "Manrope", "Space Grotesk", sans-serif;
+    --font-display: "Space Grotesk", "Manrope", sans-serif;
+    --shadow-soft: 0 8px 30px rgba(15, 23, 42, 0.08);
+    --shadow-card: 0 8px 24px rgba(15, 23, 42, 0.06);
   }
 
   body {
-    @apply antialiased;
+    @apply antialiased text-slate-800;
+    font-family: var(--font-sans);
+    background:
+      radial-gradient(
+        circle at top left,
+        rgba(59, 130, 246, 0.08),
+        transparent 45%
+      ),
+      radial-gradient(
+        circle at 30% 30%,
+        rgba(16, 185, 129, 0.08),
+        transparent 50%
+      ),
+      var(--color-surface-muted);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+  }
+
+  a:focus-visible,
+  button:focus-visible,
+  [role="button"]:focus-visible,
+  summary:focus-visible {
+    outline: 2px solid var(--color-brand-500);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: rgba(59, 130, 246, 0.18);
+  }
+}
+
+@layer components {
+  .app-shell {
+    @apply min-h-dvh bg-linear-to-b from-white via-white to-slate-50;
+  }
+
+  .section {
+    @apply rounded-3xl border border-slate-200/80 bg-white p-7 shadow-sm;
+  }
+
+  .section-muted {
+    @apply rounded-3xl border border-slate-200/70 bg-slate-50 p-7;
+  }
+
+  .card {
+    @apply rounded-2xl border border-slate-200 bg-white p-5 shadow-sm;
+  }
+
+  .card-hover {
+    @apply transition duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-semibold transition duration-200 ease-out;
+  }
+
+  .btn-primary {
+    @apply bg-brand-600 text-white shadow-sm hover:bg-brand-700 active:translate-y-0.5;
+  }
+
+  .btn-secondary {
+    @apply border border-slate-200 bg-white text-slate-800 hover:bg-slate-50 active:translate-y-0.5;
+  }
+
+  .btn-dark {
+    @apply bg-slate-900 text-white hover:bg-slate-800 active:translate-y-0.5;
+  }
+
+  .btn-ghost {
+    @apply text-slate-700 hover:bg-slate-100 active:translate-y-0.5;
+  }
+
+  .input {
+    @apply h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none ring-brand-200 focus:ring-4;
+  }
+
+  .textarea {
+    @apply rounded-xl border border-slate-200 bg-white p-3 text-sm outline-none ring-brand-200 focus:ring-4;
+  }
+
+  .select {
+    @apply h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none ring-brand-200 focus:ring-4;
+  }
+
+  .chip {
+    @apply rounded-full bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700 ring-1 ring-slate-200;
+  }
+
+  .kicker {
+    @apply inline-flex items-center gap-2 rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-800 ring-1 ring-brand-100;
+  }
+
+  .stat-pill {
+    @apply rounded-xl bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700 ring-1 ring-slate-200;
+  }
+}
+
+@layer utilities {
+  .page-transition {
+    animation: page-enter 280ms ease-out;
+  }
+
+  .skeleton {
+    background: linear-gradient(
+      110deg,
+      rgba(226, 232, 240, 0.9) 8%,
+      rgba(241, 245, 249, 0.6) 18%,
+      rgba(226, 232, 240, 0.9) 33%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.2s linear infinite;
+  }
+
+  .skeleton-rounded {
+    @apply rounded-xl;
+  }
+
+  @keyframes page-enter {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes shimmer {
+    to {
+      background-position-x: -200%;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-transition {
+    animation: none;
+  }
+
+  .skeleton {
+    animation: none;
   }
 }

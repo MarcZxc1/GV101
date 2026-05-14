@@ -1,11 +1,11 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
-import App from './App.tsx'
-import { BrowserRouter } from 'react-router-dom'
-import { AppStoreProvider } from './state/store.tsx'
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import "./index.css";
+import App from "./App.tsx";
+import { BrowserRouter } from "react-router-dom";
+import { AppStoreProvider } from "./state/store.tsx";
 
-createRoot(document.getElementById('root')!).render(
+createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <BrowserRouter>
       <AppStoreProvider>
@@ -13,4 +13,4 @@ createRoot(document.getElementById('root')!).render(
       </AppStoreProvider>
     </BrowserRouter>
   </StrictMode>,
-)
+);

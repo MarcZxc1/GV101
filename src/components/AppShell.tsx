@@ -1,11 +1,48 @@
-import type { ReactNode } from 'react'
-import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { useAppStore } from '../state/store'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+  Link,
+  NavLink,
+  useLocation,
+  useNavigate,
+  useNavigationType,
+} from "react-router-dom";
+import { useAppStore } from "../state/store";
+
+function useRouteScrollRestoration() {
+  const location = useLocation();
+  const navigationType = useNavigationType();
+  const positionsRef = useRef(new Map<string, number>());
+
+  useEffect(() => {
+    const key = `${location.pathname}${location.search}`;
+    return () => {
+      positionsRef.current.set(key, window.scrollY);
+    };
+  }, [location.pathname, location.search]);
+
+  useEffect(() => {
+    const key = `${location.pathname}${location.search}`;
+    const stored = positionsRef.current.get(key);
+    if (navigationType === "POP" && stored !== undefined) {
+      window.scrollTo({ top: stored, behavior: "auto" });
+      return;
+    }
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }, [location.pathname, location.search, navigationType]);
+}
 
 function TopNav() {
-  const { state, actions } = useAppStore()
-  const navigate = useNavigate()
-  const location = useLocation()
+  const { state, actions } = useAppStore();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  const navClass = ({ isActive }: { isActive: boolean }) =>
+    `rounded-xl px-3 py-2 text-sm font-medium transition ${
+      isActive
+        ? "bg-brand-50 text-brand-800 shadow-sm"
+        : "text-slate-700 hover:bg-slate-100"
+    }`;
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200/70 bg-white/80 backdrop-blur">
@@ -15,42 +52,23 @@ function TopNav() {
             HL
           </div>
           <div className="leading-tight">
-            <div className="text-sm font-semibold text-slate-900">HandiLink</div>
+            <div className="text-sm font-semibold text-slate-900">
+              HandiLink
+            </div>
             <div className="text-xs text-slate-500">
               Beta locked: Quezon City, Philippines
             </div>
           </div>
         </Link>
 
-        <nav className="hidden items-center gap-1 md:flex">
-          <NavLink
-            to="/marketplace"
-            className={({ isActive }) =>
-              `rounded-lg px-3 py-2 text-sm font-medium ${
-                isActive ? 'bg-brand-50 text-brand-700' : 'text-slate-700 hover:bg-slate-50'
-              }`
-            }
-          >
+        <nav className="hidden items-center gap-1 md:flex" aria-label="Primary">
+          <NavLink to="/marketplace" className={navClass}>
             Marketplace
           </NavLink>
-          <NavLink
-            to="/customer"
-            className={({ isActive }) =>
-              `rounded-lg px-3 py-2 text-sm font-medium ${
-                isActive ? 'bg-brand-50 text-brand-700' : 'text-slate-700 hover:bg-slate-50'
-              }`
-            }
-          >
+          <NavLink to="/customer" className={navClass}>
             Customer Portal
           </NavLink>
-          <NavLink
-            to="/provider"
-            className={({ isActive }) =>
-              `rounded-lg px-3 py-2 text-sm font-medium ${
-                isActive ? 'bg-brand-50 text-brand-700' : 'text-slate-700 hover:bg-slate-50'
-              }`
-            }
-          >
+          <NavLink to="/provider" className={navClass}>
             Provider Portal
           </NavLink>
         </nav>
@@ -58,46 +76,196 @@ function TopNav() {
         <div className="flex items-center gap-2">
           <div className="hidden text-right text-xs text-slate-600 sm:block">
             <div className="font-medium text-slate-900">
-              {state.role === 'customer' ? 'Customer mode' : 'Provider mode'}
+              {state.role === "customer" ? "Customer mode" : "Provider mode"}
             </div>
             <div className="truncate">{state.customerName}</div>
           </div>
           <button
             type="button"
-            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-800 shadow-sm hover:bg-slate-50"
+            className="btn btn-secondary px-3 py-2 text-sm"
             onClick={() => {
-              const next = state.role === 'customer' ? 'provider' : 'customer'
-              actions.setRole(next)
-              if (location.pathname === '/') return
-              navigate(next === 'customer' ? '/customer' : '/provider')
+              const next = state.role === "customer" ? "provider" : "customer";
+              actions.setRole(next);
+              if (location.pathname === "/") return;
+              navigate(next === "customer" ? "/customer" : "/provider");
             }}
           >
-            Switch to {state.role === 'customer' ? 'Provider' : 'Customer'}
+            Switch to {state.role === "customer" ? "Provider" : "Customer"}
+          </button>
+          <button
+            type="button"
+            className="btn btn-ghost px-3 py-2 text-sm md:hidden"
+            aria-expanded={mobileOpen}
+            aria-controls="mobile-nav"
+            onClick={() => setMobileOpen((prev) => !prev)}
+          >
+            {mobileOpen ? "Close" : "Menu"}
           </button>
         </div>
       </div>
+
+      {mobileOpen ? (
+        <div
+          id="mobile-nav"
+          className="border-t border-slate-200/70 bg-white/95 md:hidden"
+        >
+          <nav
+            className="mx-auto grid max-w-6xl gap-2 px-4 py-3"
+            aria-label="Mobile"
+          >
+            <NavLink
+              to="/marketplace"
+              className={navClass}
+              onClick={() => setMobileOpen(false)}
+            >
+              Marketplace
+            </NavLink>
+            <NavLink
+              to="/customer"
+              className={navClass}
+              onClick={() => setMobileOpen(false)}
+            >
+              Customer Portal
+            </NavLink>
+            <NavLink
+              to="/provider"
+              className={navClass}
+              onClick={() => setMobileOpen(false)}
+            >
+              Provider Portal
+            </NavLink>
+            <NavLink
+              to="/admin"
+              className={navClass}
+              onClick={() => setMobileOpen(false)}
+            >
+              Admin
+            </NavLink>
+          </nav>
+        </div>
+      ) : null}
     </header>
-  )
+  );
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
+  useRouteScrollRestoration();
+  const location = useLocation();
+  const { state } = useAppStore();
+
+  const breadcrumbs = useMemo(() => {
+    const path = location.pathname;
+    if (path === "/") return [] as Array<{ label: string; to: string }>;
+
+    const parts = path.split("/").filter(Boolean);
+    const crumbs: Array<{ label: string; to: string }> = [];
+
+    if (path.startsWith("/marketplace")) {
+      crumbs.push({ label: "Marketplace", to: "/marketplace" });
+      return crumbs;
+    }
+
+    if (path.startsWith("/providers/")) {
+      const providerId = parts[1];
+      const provider = state.providers.find((p) => p.id === providerId);
+      crumbs.push({ label: "Marketplace", to: "/marketplace" });
+      crumbs.push({ label: provider?.name ?? "Provider profile", to: path });
+      return crumbs;
+    }
+
+    if (path.startsWith("/book/")) {
+      const providerId = parts[1];
+      const provider = state.providers.find((p) => p.id === providerId);
+      crumbs.push({ label: "Marketplace", to: "/marketplace" });
+      crumbs.push({ label: provider?.name ?? "Booking", to: path });
+      return crumbs;
+    }
+
+    if (path.startsWith("/review/")) {
+      crumbs.push({ label: "Customer portal", to: "/customer" });
+      crumbs.push({ label: "Review", to: path });
+      return crumbs;
+    }
+
+    if (path.startsWith("/messages/")) {
+      crumbs.push({ label: "Messages", to: path });
+      return crumbs;
+    }
+
+    if (path.startsWith("/customer")) {
+      crumbs.push({ label: "Customer portal", to: "/customer" });
+      return crumbs;
+    }
+
+    if (path.startsWith("/provider")) {
+      crumbs.push({ label: "Provider portal", to: "/provider" });
+      return crumbs;
+    }
+
+    if (path.startsWith("/admin")) {
+      crumbs.push({ label: "Admin", to: "/admin" });
+      return crumbs;
+    }
+
+    return crumbs;
+  }, [location.pathname, state.providers]);
+
   return (
-    <div className="min-h-dvh bg-gradient-to-b from-white to-slate-50">
+    <div className="app-shell">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-60 rounded-xl bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow"
+      >
+        Skip to content
+      </a>
       <TopNav />
-      <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>
+      {breadcrumbs.length > 0 ? (
+        <div className="border-b border-slate-200/70 bg-white/60">
+          <nav
+            className="mx-auto flex max-w-6xl items-center gap-2 px-4 py-2 text-xs text-slate-600"
+            aria-label="Breadcrumb"
+          >
+            {breadcrumbs.map((crumb, index) => {
+              const isLast = index === breadcrumbs.length - 1;
+              return (
+                <div key={crumb.to} className="flex items-center gap-2">
+                  {isLast ? (
+                    <span
+                      aria-current="page"
+                      className="font-semibold text-slate-900"
+                    >
+                      {crumb.label}
+                    </span>
+                  ) : (
+                    <Link to={crumb.to} className="hover:text-slate-900">
+                      {crumb.label}
+                    </Link>
+                  )}
+                  {!isLast ? <span className="text-slate-400">/</span> : null}
+                </div>
+              );
+            })}
+          </nav>
+        </div>
+      ) : null}
+      <main
+        id="main-content"
+        className="mx-auto min-h-[65vh] max-w-6xl px-4 py-6"
+      >
+        {children}
+      </main>
       <footer className="border-t border-slate-200/70 bg-white">
         <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-6 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <span className="font-medium text-slate-900">HandiLink</span> — Reputation
-            as currency.
+            <span className="font-medium text-slate-900">HandiLink</span> —
+            Reputation as currency.
           </div>
           <div className="text-xs">
-            Demo build: in-memory state only · QC-only categories: Plumbing, Electrical, General
-            Maintenance
+            Demo build: in-memory state only · QC-only categories: Plumbing,
+            Electrical, General Maintenance
           </div>
         </div>
       </footer>
     </div>
-  )
+  );
 }
-

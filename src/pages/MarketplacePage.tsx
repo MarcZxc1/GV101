@@ -1,91 +1,102 @@
-import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { ProviderCard } from '../components/ProviderCard'
-import { useAppStore } from '../state/store'
-import type { ServiceCategory } from '../state/types'
-import { haversineKm } from '../utils/geo'
-import { providerOverallRating } from '../utils/reputation'
+import { useDeferredValue, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { ProviderCard } from "../components/ProviderCard";
+import { useAppStore } from "../state/store";
+import type { ServiceCategory } from "../state/types";
+import { haversineKm } from "../utils/geo";
+import { providerOverallRating } from "../utils/reputation";
 
-const categories: Array<ServiceCategory | 'All'> = [
-  'All',
-  'Plumbing',
-  'Electrical',
-  'General Maintenance',
-]
+const categories: Array<ServiceCategory | "All"> = [
+  "All",
+  "Plumbing",
+  "Electrical",
+  "General Maintenance",
+];
 
-type SortMode = 'Best match' | 'Rating' | 'Price (low)' | 'Price (high)' | 'Distance'
+type SortMode =
+  | "Best match"
+  | "Rating"
+  | "Price (low)"
+  | "Price (high)"
+  | "Distance";
 
 export function MarketplacePage() {
-  const { state } = useAppStore()
-  const [query, setQuery] = useState('')
-  const [category, setCategory] = useState<(typeof categories)[number]>('All')
-  const [minRating, setMinRating] = useState(0)
-  const [radiusKm, setRadiusKm] = useState(5)
-  const [maxHourlyRate, setMaxHourlyRate] = useState(1000)
-  const [availabilityOnly, setAvailabilityOnly] = useState(false)
-  const [sortMode, setSortMode] = useState<SortMode>('Best match')
-  const [view, setView] = useState<'list' | 'map'>('list')
+  const { state } = useAppStore();
+  const [query, setQuery] = useState("");
+  const [category, setCategory] = useState<(typeof categories)[number]>("All");
+  const [minRating, setMinRating] = useState(0);
+  const [radiusKm, setRadiusKm] = useState(5);
+  const [maxHourlyRate, setMaxHourlyRate] = useState(1000);
+  const [availabilityOnly, setAvailabilityOnly] = useState(false);
+  const [sortMode, setSortMode] = useState<SortMode>("Best match");
+  const [view, setView] = useState<"list" | "map">("list");
+  const deferredQuery = useDeferredValue(query);
+  const isFiltering = deferredQuery !== query;
 
   const items = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    const now = new Date()
-    const today = now.getDay() as 0 | 1 | 2 | 3 | 4 | 5 | 6
+    const q = deferredQuery.trim().toLowerCase();
+    const now = new Date();
+    const today = now.getDay() as 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
     const base = state.providers
-      .filter((p) => (category === 'All' ? true : p.category === category))
-      .filter((p) => p.verificationStatus === 'approved' || true)
+      .filter((p) => (category === "All" ? true : p.category === category))
+      .filter((p) => p.verificationStatus === "approved" || true)
       .filter((p) =>
         q
-          ? `${p.name} ${p.category} ${p.skills.join(' ')} ${p.barangay}`
+          ? `${p.name} ${p.category} ${p.skills.join(" ")} ${p.barangay}`
               .toLowerCase()
               .includes(q)
           : true,
       )
       .map((p) => {
-        const dist = haversineKm(state.customerLocation, p.location)
-        const overall = providerOverallRating(state.reviews, p.id) ?? 0
-        const isAvailableToday = p.availability.some((w) => w.day === today)
-        return { provider: p, dist, overall, isAvailableToday }
+        const dist = haversineKm(state.customerLocation, p.location);
+        const overall = providerOverallRating(state.reviews, p.id) ?? 0;
+        const isAvailableToday = p.availability.some((w) => w.day === today);
+        return { provider: p, dist, overall, isAvailableToday };
       })
       .filter((x) => x.dist <= radiusKm)
       .filter((x) => x.provider.hourlyRatePhp <= maxHourlyRate)
       .filter((x) => (availabilityOnly ? x.isAvailableToday : true))
-      .filter((x) => (minRating > 0 ? x.overall >= minRating : true))
+      .filter((x) => (minRating > 0 ? x.overall >= minRating : true));
 
     const sorted = [...base].sort((a, b) => {
-      if (sortMode === 'Rating') return b.overall - a.overall
-      if (sortMode === 'Price (low)') return a.provider.hourlyRatePhp - b.provider.hourlyRatePhp
-      if (sortMode === 'Price (high)') return b.provider.hourlyRatePhp - a.provider.hourlyRatePhp
-      if (sortMode === 'Distance') return a.dist - b.dist
+      if (sortMode === "Rating") return b.overall - a.overall;
+      if (sortMode === "Price (low)")
+        return a.provider.hourlyRatePhp - b.provider.hourlyRatePhp;
+      if (sortMode === "Price (high)")
+        return b.provider.hourlyRatePhp - a.provider.hourlyRatePhp;
+      if (sortMode === "Distance") return a.dist - b.dist;
       // Best match: rating + proximity heuristic
-      const scoreA = a.overall * 10 - a.dist
-      const scoreB = b.overall * 10 - b.dist
-      return scoreB - scoreA
-    })
+      const scoreA = a.overall * 10 - a.dist;
+      const scoreB = b.overall * 10 - b.dist;
+      return scoreB - scoreA;
+    });
 
-    return sorted
+    return sorted;
   }, [
     availabilityOnly,
     category,
     maxHourlyRate,
     minRating,
-    query,
+    deferredQuery,
     radiusKm,
     sortMode,
     state.customerLocation,
     state.providers,
     state.reviews,
-  ])
+  ]);
 
   return (
     <div className="grid gap-6">
-      <div className="rounded-3xl border border-slate-200 bg-white p-7">
+      <div className="section">
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
-            <h2 className="text-2xl font-semibold text-slate-900">Service Marketplace</h2>
+            <h2 className="text-2xl font-semibold text-slate-900">
+              Service Marketplace
+            </h2>
             <p className="mt-1 text-slate-600">
-              Local Quezon City providers. Verified badge appears automatically based on reputation
-              rules.
+              Local Quezon City providers. Verified badge appears automatically
+              based on reputation rules.
             </p>
           </div>
           <div className="text-xs text-slate-500">
@@ -100,16 +111,18 @@ export function MarketplacePage() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Name, skill, barangay…"
-              className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none ring-brand-200 focus:ring-4"
+              className="input"
             />
           </label>
 
           <label className="grid gap-1">
-            <span className="text-xs font-semibold text-slate-700">Category</span>
+            <span className="text-xs font-semibold text-slate-700">
+              Category
+            </span>
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value as any)}
-              className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none ring-brand-200 focus:ring-4"
+              className="select"
             >
               {categories.map((c) => (
                 <option key={c} value={c}>
@@ -162,7 +175,9 @@ export function MarketplacePage() {
           </label>
 
           <label className="grid gap-1">
-            <span className="text-xs font-semibold text-slate-700">Max hourly rate (₱)</span>
+            <span className="text-xs font-semibold text-slate-700">
+              Max hourly rate (₱)
+            </span>
             <div className="flex items-center gap-3">
               <input
                 type="range"
@@ -185,23 +200,23 @@ export function MarketplacePage() {
               <div className="flex gap-2">
                 <button
                   type="button"
-                  className={`rounded-xl px-3 py-2 text-sm font-semibold ring-1 ${
-                    view === 'list'
-                      ? 'bg-brand-50 text-brand-800 ring-brand-100'
-                      : 'bg-white text-slate-700 ring-slate-200 hover:bg-slate-50'
+                  className={`btn px-3 py-2 text-sm ring-1 ${
+                    view === "list"
+                      ? "bg-brand-50 text-brand-800 ring-brand-100"
+                      : "bg-white text-slate-700 ring-slate-200 hover:bg-slate-50"
                   }`}
-                  onClick={() => setView('list')}
+                  onClick={() => setView("list")}
                 >
                   List
                 </button>
                 <button
                   type="button"
-                  className={`rounded-xl px-3 py-2 text-sm font-semibold ring-1 ${
-                    view === 'map'
-                      ? 'bg-brand-50 text-brand-800 ring-brand-100'
-                      : 'bg-white text-slate-700 ring-slate-200 hover:bg-slate-50'
+                  className={`btn px-3 py-2 text-sm ring-1 ${
+                    view === "map"
+                      ? "bg-brand-50 text-brand-800 ring-brand-100"
+                      : "bg-white text-slate-700 ring-slate-200 hover:bg-slate-50"
                   }`}
-                  onClick={() => setView('map')}
+                  onClick={() => setView("map")}
                 >
                   Map
                 </button>
@@ -211,22 +226,28 @@ export function MarketplacePage() {
               <select
                 value={sortMode}
                 onChange={(e) => setSortMode(e.target.value as SortMode)}
-                className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none ring-brand-200 focus:ring-4"
+                className="select w-full"
               >
-                {(['Best match', 'Rating', 'Price (low)', 'Price (high)', 'Distance'] as const).map(
-                  (s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ),
-                )}
+                {(
+                  [
+                    "Best match",
+                    "Rating",
+                    "Price (low)",
+                    "Price (high)",
+                    "Distance",
+                  ] as const
+                ).map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
               </select>
               <label className="flex items-center gap-2 text-sm text-slate-700">
                 <input
                   type="checkbox"
                   checked={availabilityOnly}
                   onChange={(e) => setAvailabilityOnly(e.target.checked)}
-                  className="size-4"
+                  className="size-4 accent-brand-600"
                 />
                 Available today
               </label>
@@ -235,13 +256,25 @@ export function MarketplacePage() {
         </div>
       </div>
 
-      {view === 'map' ? (
-        <div className="rounded-3xl border border-slate-200 bg-white p-7">
+      <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
+        <div>
+          {items.length} providers · {view === "list" ? "List" : "Map"} view
+        </div>
+        {isFiltering ? (
+          <div className="text-brand-700">Updating results…</div>
+        ) : null}
+      </div>
+
+      {view === "map" ? (
+        <div className="section">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <div className="text-lg font-semibold text-slate-900">Map view (simulated)</div>
+              <div className="text-lg font-semibold text-slate-900">
+                Map view (simulated)
+              </div>
               <div className="mt-1 text-sm text-slate-600">
-                Pins are colored by rating tier: green ≥4.7, yellow 3.5–4.6, red &lt;3.5.
+                Pins are colored by rating tier: green ≥4.7, yellow 3.5–4.6, red
+                &lt;3.5.
               </div>
             </div>
             <div className="text-xs text-slate-500">
@@ -249,28 +282,40 @@ export function MarketplacePage() {
             </div>
           </div>
           <div className="mt-5 grid gap-3 md:grid-cols-2">
-            <div className="relative h-80 overflow-hidden rounded-2xl bg-gradient-to-br from-slate-50 to-brand-50 ring-1 ring-slate-200">
-              <div className="absolute inset-0 opacity-40 [background-image:linear-gradient(to_right,rgba(148,163,184,.35)_1px,transparent_1px),linear-gradient(to_bottom,rgba(148,163,184,.35)_1px,transparent_1px)] [background-size:32px_32px]" />
+            <div className="relative h-80 overflow-hidden rounded-2xl bg-linear-to-br from-slate-50 to-brand-50 ring-1 ring-slate-200">
+              <div className="absolute inset-0 opacity-40 bg-[linear-gradient(to_right,rgba(148,163,184,.35)_1px,transparent_1px),linear-gradient(to_bottom,rgba(148,163,184,.35)_1px,transparent_1px)] bg-size-[32px_32px]" />
               {items.slice(0, 10).map((x) => {
                 const tier =
-                  x.overall >= 4.7 ? 'bg-emerald-500' : x.overall >= 3.5 ? 'bg-amber-400' : 'bg-rose-500'
+                  x.overall >= 4.7
+                    ? "bg-emerald-500"
+                    : x.overall >= 3.5
+                      ? "bg-amber-400"
+                      : "bg-rose-500";
                 // normalize lat/lng to a QC-ish box for display
-                const left = ((x.provider.location.lng - 121.02) / (121.10 - 121.02)) * 100
-                const top = (1 - (x.provider.location.lat - 14.62) / (14.69 - 14.62)) * 100
+                const left =
+                  ((x.provider.location.lng - 121.02) / (121.1 - 121.02)) * 100;
+                const top =
+                  (1 - (x.provider.location.lat - 14.62) / (14.69 - 14.62)) *
+                  100;
                 return (
                   <Link
                     key={x.provider.id}
                     to={`/providers/${x.provider.id}`}
                     className="group absolute -translate-x-1/2 -translate-y-1/2"
-                    style={{ left: `${clampPct(left)}%`, top: `${clampPct(top)}%` }}
+                    style={{
+                      left: `${clampPct(left)}%`,
+                      top: `${clampPct(top)}%`,
+                    }}
                     aria-label={`Open ${x.provider.name}`}
                   >
-                    <span className={`block size-3 rounded-full ${tier} ring-4 ring-white`} />
+                    <span
+                      className={`block size-3 rounded-full ${tier} ring-4 ring-white`}
+                    />
                     <span className="pointer-events-none absolute left-1/2 top-4 hidden -translate-x-1/2 whitespace-nowrap rounded-lg bg-slate-900 px-2 py-1 text-xs text-white group-hover:block">
                       {x.provider.name}
                     </span>
                   </Link>
-                )
+                );
               })}
               <div
                 className="absolute left-1/2 top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand-700 ring-4 ring-white"
@@ -278,12 +323,15 @@ export function MarketplacePage() {
               />
             </div>
             <div className="grid gap-3">
-              <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-700 ring-1 ring-slate-200">
-                This is a lightweight placeholder for the SRS “map view” without requiring a Maps API
-                key. The distance filter uses real Haversine math against seeded provider coordinates.
+              <div className="card bg-slate-50 p-4 text-sm text-slate-700 ring-1 ring-slate-200">
+                This is a lightweight placeholder for the SRS “map view” without
+                requiring a Maps API key. The distance filter uses real
+                Haversine math against seeded provider coordinates.
               </div>
-              <div className="rounded-2xl border border-slate-200 p-5">
-                <div className="text-sm font-semibold text-slate-900">Legend</div>
+              <div className="card">
+                <div className="text-sm font-semibold text-slate-900">
+                  Legend
+                </div>
                 <div className="mt-3 grid gap-2 text-sm text-slate-700">
                   <div className="flex items-center gap-2">
                     <span className="size-3 rounded-full bg-emerald-500 ring-4 ring-white" />
@@ -304,28 +352,27 @@ export function MarketplacePage() {
         </div>
       ) : null}
 
-      {view === 'list' ? (
+      {view === "list" ? (
         <div className="grid gap-4">
           {items.map(({ provider }) => (
-          <ProviderCard
-            key={provider.id}
-            provider={provider}
-            reviews={state.reviews}
-            bookingsCountSource={state.bookings}
-          />
-        ))}
+            <ProviderCard
+              key={provider.id}
+              provider={provider}
+              reviews={state.reviews}
+              bookingsCountSource={state.bookings}
+            />
+          ))}
           {items.length === 0 ? (
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-600">
+            <div className="card text-sm text-slate-600">
               No providers match your filters.
             </div>
           ) : null}
         </div>
       ) : null}
     </div>
-  )
+  );
 }
 
 function clampPct(n: number) {
-  return Math.max(3, Math.min(97, n))
+  return Math.max(3, Math.min(97, n));
 }
-

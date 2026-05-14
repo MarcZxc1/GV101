@@ -1,23 +1,25 @@
-export function Stars({
-  value,
-  size = 16,
-}: {
-  value: number
-  size?: number
-}) {
-  const full = Math.floor(value)
-  const frac = value - full
+export function Stars({ value, size = 16 }: { value: number; size?: number }) {
+  const full = Math.floor(value);
+  const frac = value - full;
   const stars = Array.from({ length: 5 }, (_, i) => {
-    const idx = i + 1
+    const idx = i + 1;
     const fill =
-      idx <= full ? 1 : idx === full + 1 ? Math.max(0, Math.min(1, frac)) : 0
-    return fill
-  })
+      idx <= full ? 1 : idx === full + 1 ? Math.max(0, Math.min(1, frac)) : 0;
+    return fill;
+  });
 
   return (
-    <div className="flex items-center gap-0.5" aria-label={`${value.toFixed(1)} out of 5`}>
+    <div
+      className="flex items-center gap-0.5"
+      role="img"
+      aria-label={`${value.toFixed(1)} out of 5`}
+    >
       {stars.map((fill, i) => (
-        <span key={i} className="relative" style={{ width: size, height: size }}>
+        <span
+          key={i}
+          className="relative"
+          style={{ width: size, height: size }}
+        >
           <svg
             width={size}
             height={size}
@@ -45,6 +47,5 @@ export function Stars({
         </span>
       ))}
     </div>
-  )
+  );
 }
-

@@ -1,27 +1,27 @@
-import { useMemo, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
-import { Stars } from '../components/Stars'
-import { useAppStore } from '../state/store'
-import { clampRating, overallFromDimensions } from '../utils/reputation'
+import { useMemo, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { Stars } from "../components/Stars";
+import { useAppStore } from "../state/store";
+import { clampRating, overallFromDimensions } from "../utils/reputation";
 
 export function ReviewSubmissionPage() {
-  const { bookingId } = useParams()
-  const navigate = useNavigate()
-  const { state, actions } = useAppStore()
-  const booking = state.bookings.find((b) => b.id === bookingId)
+  const { bookingId } = useParams();
+  const navigate = useNavigate();
+  const { state, actions } = useAppStore();
+  const booking = state.bookings.find((b) => b.id === bookingId);
 
   const provider = booking
     ? state.providers.find((p) => p.id === booking.providerId)
-    : undefined
+    : undefined;
 
-  const [punctuality, setPunctuality] = useState(5)
-  const [technicalSkill, setTechnicalSkill] = useState(5)
-  const [communication, setCommunication] = useState(5)
+  const [punctuality, setPunctuality] = useState(5);
+  const [technicalSkill, setTechnicalSkill] = useState(5);
+  const [communication, setCommunication] = useState(5);
   const [remarks, setRemarks] = useState(
-    'Clear communication, arrived on time, and the repair held up well after testing.',
-  )
-  const [photoUrls, setPhotoUrls] = useState<string[]>([])
-  const [photoError, setPhotoError] = useState<string | null>(null)
+    "Clear communication, arrived on time, and the repair held up well after testing.",
+  );
+  const [photoUrls, setPhotoUrls] = useState<string[]>([]);
+  const [photoError, setPhotoError] = useState<string | null>(null);
 
   const overall = useMemo(
     () =>
@@ -31,32 +31,32 @@ export function ReviewSubmissionPage() {
         communication,
       }),
     [communication, punctuality, technicalSkill],
-  )
+  );
 
   if (!booking || !provider) {
     return (
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-700">
-        Booking not found.
-      </div>
-    )
+      <div className="card text-sm text-slate-700">Booking not found.</div>
+    );
   }
 
-  const tooShort = remarks.trim().length < 50
+  const tooShort = remarks.trim().length < 50;
 
   return (
     <div className="grid gap-6 md:grid-cols-5">
       <section className="md:col-span-3">
-        <div className="rounded-3xl border border-slate-200 bg-white p-7">
+        <div className="section">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h2 className="text-2xl font-semibold text-slate-900">Submit a verified review</h2>
+              <h2 className="text-2xl font-semibold text-slate-900">
+                Submit a verified review
+              </h2>
               <div className="mt-1 text-slate-600">
                 {provider.name} · Booking {booking.id.slice(0, 8)}
               </div>
             </div>
             <Link
               to="/customer"
-              className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50"
+              className="btn btn-secondary px-3 py-2 text-sm"
             >
               Back
             </Link>
@@ -87,58 +87,78 @@ export function ReviewSubmissionPage() {
                 value={remarks}
                 onChange={(e) => setRemarks(e.target.value)}
                 rows={5}
-                className={`rounded-xl border bg-white p-3 text-sm outline-none ring-brand-200 focus:ring-4 ${
-                  tooShort ? 'border-rose-300' : 'border-slate-200'
+                className={`textarea ${
+                  tooShort ? "border-rose-300" : "border-slate-200"
                 }`}
+                aria-invalid={tooShort}
+                aria-describedby="review-remarks-help"
               />
-              <div className="flex items-center justify-between text-xs">
-                <span className={tooShort ? 'text-rose-600' : 'text-slate-500'}>
+              <div
+                id="review-remarks-help"
+                className="flex items-center justify-between text-xs"
+              >
+                <span className={tooShort ? "text-rose-600" : "text-slate-500"}>
                   {tooShort
                     ? `Add ${50 - remarks.trim().length} more characters for depth.`
-                    : 'Looks good — thanks for being specific.'}
+                    : "Looks good — thanks for being specific."}
                 </span>
-                <span className="text-slate-500">{remarks.trim().length}/50</span>
+                <span className="text-slate-500">
+                  {remarks.trim().length}/50
+                </span>
               </div>
             </label>
 
             <label className="grid gap-1">
-              <span className="text-xs font-semibold text-slate-700">Photo upload (optional)</span>
+              <span className="text-xs font-semibold text-slate-700">
+                Photo upload (optional)
+              </span>
               <input
                 type="file"
                 accept="image/jpeg,image/png"
                 multiple
                 onChange={(e) => {
-                  setPhotoError(null)
-                  const files = Array.from(e.target.files ?? [])
-                  const maxCount = 5
-                  const maxBytes = 5 * 1024 * 1024
+                  setPhotoError(null);
+                  const files = Array.from(e.target.files ?? []);
+                  const maxCount = 5;
+                  const maxBytes = 5 * 1024 * 1024;
 
                   const accepted = files.filter((f) => {
-                    const okType = f.type === 'image/jpeg' || f.type === 'image/png'
-                    const okSize = f.size <= maxBytes
-                    return okType && okSize
-                  })
+                    const okType =
+                      f.type === "image/jpeg" || f.type === "image/png";
+                    const okSize = f.size <= maxBytes;
+                    return okType && okSize;
+                  });
 
-                  const rejectedCount = files.length - accepted.length
+                  const rejectedCount = files.length - accepted.length;
                   if (rejectedCount > 0) {
-                    setPhotoError('Some files were rejected (only JPEG/PNG ≤ 5MB).')
+                    setPhotoError(
+                      "Some files were rejected (only JPEG/PNG ≤ 5MB).",
+                    );
                   }
 
                   setPhotoUrls((prev) => {
-                    const remaining = Math.max(0, maxCount - prev.length)
-                    const urls = accepted.slice(0, remaining).map((f) => URL.createObjectURL(f))
+                    const remaining = Math.max(0, maxCount - prev.length);
+                    const urls = accepted
+                      .slice(0, remaining)
+                      .map((f) => URL.createObjectURL(f));
                     if (accepted.length > remaining) {
-                      setPhotoError(`You can only attach up to ${maxCount} photos.`)
+                      setPhotoError(
+                        `You can only attach up to ${maxCount} photos.`,
+                      );
                     }
-                    return [...prev, ...urls]
-                  })
+                    return [...prev, ...urls];
+                  });
                 }}
                 className="block w-full rounded-xl border border-slate-200 bg-white p-3 text-sm"
               />
               <div className="text-xs text-slate-500">
                 Up to 5 photos · JPEG/PNG only · max 5MB each (SRS).
               </div>
-              {photoError ? <div className="text-xs text-rose-600">{photoError}</div> : null}
+              {photoError ? (
+                <div className="text-xs text-rose-600" role="alert">
+                  {photoError}
+                </div>
+              ) : null}
               {photoUrls.length > 0 ? (
                 <div className="mt-2 grid grid-cols-3 gap-2">
                   {photoUrls.slice(0, 6).map((u) => (
@@ -146,6 +166,8 @@ export function ReviewSubmissionPage() {
                       key={u}
                       src={u}
                       alt="Upload preview"
+                      loading="lazy"
+                      decoding="async"
                       className="h-24 w-full rounded-xl object-cover ring-1 ring-slate-200"
                     />
                   ))}
@@ -156,7 +178,7 @@ export function ReviewSubmissionPage() {
             <button
               type="button"
               disabled={tooShort || booking.reviewId !== undefined}
-              className="rounded-2xl bg-brand-600 px-5 py-3 text-sm font-semibold text-white enabled:hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
+              className="btn btn-primary disabled:cursor-not-allowed disabled:opacity-50"
               onClick={() => {
                 const review = actions.submitReview({
                   bookingId: booking.id,
@@ -168,9 +190,9 @@ export function ReviewSubmissionPage() {
                   },
                   remarks: remarks.trim(),
                   photos: photoUrls,
-                })
-                actions.setBookingStatus(booking.id, 'completed')
-                navigate(`/providers/${review.providerId}`)
+                });
+                actions.setBookingStatus(booking.id, "completed");
+                navigate(`/providers/${review.providerId}`);
               }}
             >
               Submit review
@@ -180,20 +202,24 @@ export function ReviewSubmissionPage() {
       </section>
 
       <aside className="md:col-span-2">
-        <div className="rounded-3xl border border-slate-200 bg-white p-7">
-          <div className="text-sm font-semibold text-slate-900">Your overall score</div>
+        <div className="section">
+          <div className="text-sm font-semibold text-slate-900">
+            Your overall score
+          </div>
           <div className="mt-3 flex items-center gap-2">
             <Stars value={overall} />
-            <div className="text-lg font-semibold text-slate-900">{overall.toFixed(1)}</div>
+            <div className="text-lg font-semibold text-slate-900">
+              {overall.toFixed(1)}
+            </div>
           </div>
           <div className="mt-4 rounded-2xl bg-slate-50 p-4 text-xs text-slate-600 ring-1 ring-slate-200">
-            Reviews are “verified” by flow: they’re only submitted from a completed booking in this
-            demo.
+            Reviews are “verified” by flow: they’re only submitted from a
+            completed booking in this demo.
           </div>
         </div>
       </aside>
     </div>
-  )
+  );
 }
 
 function RatingControl({
@@ -201,15 +227,17 @@ function RatingControl({
   value,
   onChange,
 }: {
-  label: string
-  value: number
-  onChange: (v: number) => void
+  label: string;
+  value: number;
+  onChange: (v: number) => void;
 }) {
   return (
-    <div className="rounded-2xl border border-slate-200 p-5">
+    <div className="card">
       <div className="flex items-center justify-between gap-3">
         <div className="text-sm font-semibold text-slate-900">{label}</div>
-        <div className="text-sm font-semibold text-slate-900">{value.toFixed(1)}</div>
+        <div className="text-sm font-semibold text-slate-900">
+          {value.toFixed(1)}
+        </div>
       </div>
       <input
         type="range"
@@ -221,6 +249,5 @@ function RatingControl({
         className="mt-3 w-full"
       />
     </div>
-  )
+  );
 }
-
